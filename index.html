@@ -62,7 +62,14 @@
                             <div class="right clearfix">
                                 <div class="item__value">+ 2,100.00</div>
                                 <div class="item__delete">
-                                    <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
+                                    <button class="item__delete--btn">
+
+                                        // TRAVERSE the DOM in order to click on this then delete the parent node
+                                        // the BUTTON element is the parent element of the <i>
+                                        // we'd need to use the parentNode property 4 times to get to the top
+                                        <i class="ion-ios-close-outline"></i> 
+                                    
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -119,6 +126,9 @@
             
         </div>
         
-        <script src="app.js"></script>
+        <script src="BudgetController.js"></script>
+        <script src="UIController.js"></script>
+        <script src="App.js"></script>
+
     </body>
 </html>

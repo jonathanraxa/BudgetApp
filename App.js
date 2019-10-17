@@ -1,173 +1,6 @@
 
-// BUDGET CONTROLLER
+// ----------------  GLOBAL APP CONTROLLER ---------------- 
 
-
-let budgetController = (function() {
-    class Expense {
-        constructor(id, description, value){
-            this.id = id;
-            this.description = description;
-            this.value = value;
-        }
-    }
-    class Income {
-        constructor(id, description, value){
-            this.id = id;
-            this.description = description;
-            this.value = value;
-        }
-    }
-    // function constructor - creating an EXPENSE object
-    // let Expense = (id, description, value) => {
-    //     this.id = id;
-    //     this.description = description;
-    //     this.value = value;
-    // };
-
-      // function constructor - creating an INCOME object
-    //   let Income = (id, description, value) => {
-    //     this.id = id;
-    //     this.description = description;
-    //     this.value = value;
-    // };
-
-    let data = {
-        allItems: {
-            exp: [], 
-            inc: [], 
-        },
-        totals: {
-            exp: 0,
-            inc: 0
-        }
-    };
-
-    return {
-
-        // creates a new item (we need a type, description, and value of exp/inc)
-        addItem: (type, des, val) => {
-            
-            // create a new object from this constructor
-            let newItem, ID;
-
-            // need a unique id for each item in the array 
-            // [1, 2, 3, 4, 5], next ID = 6? What if we deleted stuff?
-            // [1, 2, 3, 6, 8], then we'd have two elements with ID of 6
-            // solution: ID = last ID + 1
-
-            // handle initial ID at 0 and over 0
-            if ( data.allItems[type].length > 0){
-                ID = data.allItems[type][data.allItems[type].length -1].id + 1; 
-            } else {
-                ID = 0; 
-            }
-
-            // check for expense of income
-            if (type === 'exp'){
-                newItem = new Expense(ID, des,val);
-            } else if (type === 'inc'){
-                // creates a new object based on inc
-                newItem = new Income(ID, des, val);
-            }
-
-            // pushes the new object newItem into the allItems array
-            data.allItems[type].push(newItem);
-
-            // return the new element
-            return newItem;
-
-        },
-
-        testing: () => {
-            console.log(data);
-        }
-    };
-
-
-})(); 
-
-
-// UI CONTROLLER
-let  UIController = (function() {
-
-    // create an object that stores all the querySelector data
-    let DOMstrings = {
-        inputType: '.add__type',
-        inputDescription: '.add__description',
-        inputValue: '.add__value',
-        inputBtn: '.add__btn',
-        incomeContainer: '.income__list',
-        expensesContainer: '.expenses__list'
-    }
-    
-    // create a public method that will get returned for the other functions to use
-    return {
-        getInput: () => {
-        // gets the value of the inputs
-            return {
-                type: document.querySelector(DOMstrings.inputType).value, // will be either inc or exp
-                description: document.querySelector(DOMstrings.inputDescription).value,
-                value: document.querySelector(DOMstrings.inputValue).value    
-       
-                // this is the OLD way of doing it
-                // let type = document.querySelector('.add__type').value; // will be either inc or exp
-                // let description = document.querySelector('.add__description').value;
-                // let value = document.querySelector('.add__value').value;
-
-                // How do we return 3 values at the same time? Use Objects.
-            };
-        },
-
-        addListItem: (obj, type) => {
-
-            let html, element;
-
-            // Create HTML string with placeholder text
-           
-           if (type === 'inc') {
-               element = DOMstrings.incomeContainer;
-
-           html = 
-           `<div class="item clearfix" id="income-${obj.id}">
-                <div class="item__description">${obj.description}</div>
-                <div class="right clearfix">
-                    <div class="item__value">${obj.value}</div>
-                    <div class="item__delete">
-                        <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
-                    </div>
-                </div>
-            </div>`;
-           } else if (type === 'exp'){
-               element = DOMstrings.expensesContainer;
-              html = 
-              `<div class="item clearfix" id="expense-${obj.id}">
-                <div class="item__description">${obj.description}</div>
-                <div class="right clearfix">
-                    <div class="item__value">${obj.value}</div>
-                    <div class="item__percentage">21%</div>
-                    <div class="item__delete">
-                        <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
-                    </div>
-                </div>
-                </div>
-                `;
-           }
-            // Replace the placeholder text with some actual data
-           // --> since we have Es6, we can bypass this step from the code above
-
-            // Insert the HTML into the DOM
-           document.querySelector(element).insertAdjacentHTML('beforeend', html); 
-        },
-             
-        getDOMstrings: () => {
-            return DOMstrings;
-        }
-        
-    };
-
-})(); // END UIController
-
-// GLOBAL APP CONTROLLER
 let controller = (function(budgetCtrl, UICtrl) {
     
     // how do we call this? create a public initialization function
@@ -190,8 +23,38 @@ let controller = (function(budgetCtrl, UICtrl) {
             }
 
         });
+
+        // EVENT LISTENER: called each time someone clicks in this container to DELETE
+        // an item and allows the event to bubble up
+        document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+
+        document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
     };
 
+
+    let updateBudget = () => {
+        // 1. Calc budget
+        budgetCtrl.calculateBudget();
+
+        // 2. return the budget
+        let budget = budgetCtrl.getBudget();
+
+        // 3. Display the budget on the UI
+        UICtrl.displayBudget(budget);
+    };
+
+
+    let updatePercentages = () => {
+        
+        // 1. Calculate percentages
+        budgetCtrl.calculatePercentages();
+
+        // 2. Read % from the budget controller
+        let percentages = budgetCtrl.getPercentages();
+
+        // 3. update the Ui with the new percentages
+        UICtrl.displayPercentages(percentages);
+    }
 
     
     // called when we want to add a new item
@@ -202,19 +65,71 @@ let controller = (function(budgetCtrl, UICtrl) {
         // 1. Get the field input data
         input = UICtrl.getInput();
 
-        // 2. Add the item to the budget controller
-        newItem = budgetCtrl.addItem(input.type, input.description, input.value);
 
-        // 3. Add the item to the UI
-        UICtrl.addListItem(newItem, input.type);
+        // if the description isn't empty
+        // & if the value is not, not a number
+        // & if the value is greater than 0
+        if(input.description !== "" && !isNaN(input.value) && (input.value) > 0) {
+            // 2. Add the item to the budget controller
+            newItem = budgetCtrl.addItem(input.type, input.description, input.value);
 
-        // 4. Calculate the budget
+            // 3. Add the item to the UI
+            UICtrl.addListItem(newItem, input.type);
 
-        // 5. Display the budget on the UI
-    }
+            // 4. Clear the fields
+            UICtrl.clearFields();
+
+            // 5. Calculate the budget / also display it
+            updateBudget();
+
+            // 6. calculate and update the percentages
+            updatePercentages();
+
+
+
+        }    
+    };
+
+    // we need the evt because we want to know the TARGET element
+    let ctrlDeleteItem = evt => {
+        let itemID, splitID, type, ID;
+
+        // we heavily rely on the DOM structure in this case - not ideal though
+        itemID = evt.target.parentNode.parentNode.parentNode.parentNode.id;
+
+        // check if there's an ID
+        if (itemID) {
+            
+            // NOTE: primative --> objects so we can use them as objects and use methods on them
+
+            // inc-1 --> the format
+            splitID = itemID.split('-'); // returns ['inc','1'] -- it splits at '-'
+            type = splitID[0]; // determines (inc or exp) as the type
+            ID = parseInt(splitID[1]);
+
+            // 1. delete the item from the data structure
+            budgetCtrl.deleteItem(type, ID); // we're comparing a string to a number
+
+            // 2. delete the item from the user interface 
+            UICtrl.deleteListItem(itemID);
+
+            // 3. update and show the new budget
+            updateBudget(); // contains all the updating functionality 
+
+        }
+    };
 
     return {
         init: () => {
+            // pass an obj with everything set to 0
+            UICtrl.displayMonth();
+
+            UICtrl.displayBudget({
+                budget: 0,
+                totalInc: 0,
+                totalExp: 0,
+                percentage: -1
+            }); // want everything set to 0
             setupEventListeners();
         }
     }
